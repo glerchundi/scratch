@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+set -x
+
+# install required packages
+apt-get update
+apt-get install -y curl make automake g++ gnupg xz-utils
+
+# import gpg public keys
+# [tar]  55D0C732 - Sergey Poznyakoff <gray@gnu.org>
+# [gzip] 000BEEEE - Jim Meyering <jim@meyering.net>
+# [musl] 3020450F - musl libc <musl@libc.org>
+gpg --recv-keys 55D0C732 000BEEEE 3020450F

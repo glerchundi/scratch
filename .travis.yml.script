@@ -1,0 +1,48 @@
+#!/bin/bash
+set -e
+set -x
+
+BUILD_DIR=${TRAVIS_BUILD_DIR:/root}
+
+# software versions
+declare -A versions
+versions[musl]=1.0.5
+versions[gzip]=1.6
+versions[tar]=1.28
+
+# musl: download, verify, build & install
+cd ${BUILD_DIR}
+curl http://www.musl-libc.org/releases/musl-${versions[musl]}.tar.gz -o musl-${versions[musl]}.tar.gz
+curl http://www.musl-libc.org/releases/musl-${versions[musl]}.tar.gz.asc -o musl-${versions[musl]}.tar.gz.asc
+gpg --verify musl-${versions[musl]}.tar.gz.asc musl-${versions[musl]}.tar.gz
+tar xvfz musl-${versions[musl]}.tar.gz
+cd musl-${versions[musl]}
+./configure && make && make install
+
+# gzip: download, verify & build
+cd ${BUILD_DIR}
+curl http://ftp.gnu.org/gnu/gzip/gzip-${versions[gzip]}.tar.xz -o gzip-${versions[gzip]}.tar.xz
+curl http://ftp.gnu.org/gnu/gzip/gzip-${versions[gzip]}.tar.xz.sig -o gzip-${versions[gzip]}.tar.xz.sig
+gpg --verify gzip-${versions[gzip]}.tar.xz.sig gzip-${versions[gzip]}.tar.xz
+tar xvfJ gzip-${versions[gzip]}.tar.xz
+cd gzip-${versions[gzip]}
+CC="/usr/local/musl/bin/musl-gcc -static" ./configure && make
+
+# tar: download, verify & build
+cd ${BUILD_DIR}
+curl http://ftp.gnu.org/gnu/tar/tar-${versions[tar]}.tar.gz -o tar-${versions[tar]}.tar.gz
+curl http://ftp.gnu.org/gnu/tar/tar-${versions[tar]}.tar.gz.sig -o tar-${versions[tar]}.tar.gz.sig
+gpg --verify tar-${versions[tar]}.tar.gz.sig tar-${versions[tar]}.tar.gz
+tar xvfz tar-${versions[tar]}.tar.gz
+cd tar-${versions[tar]}
+FORCE_UNSAFE_CONFIGURE=1 CC="/usr/local/musl/bin/musl-gcc -static" ./configure --with-gzip=/bin/gzip && make
+
+# create the Dockerfile
+cd ${BUILD_DIR}
+cat > ./Dockerfile <<EOL
+FROM scratch
+ADD ./tar-${versions[tar]}/src/tar /bin/tar
+ADD ./gzip-${versions[gzip]}/gzip /bin/gzip
+EOL
+
+docker build -t quay.io/glerchundi/scratch:latest .
