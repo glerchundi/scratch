@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 docker login -e="." -u="${QUAY_USERNAME}" -p="${QUAY_PASSWORD}" quay.io
 docker push quay.io/glerchundi/scratch:latest

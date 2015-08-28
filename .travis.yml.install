@@ -1,10 +1,9 @@
 #!/bin/bash
-set -e
 set -x
 
 # install required packages
-apt-get update
-apt-get install -y curl make automake g++ gnupg xz-utils
+sudo apt-get update
+sudo apt-get install -y curl make automake g++ gnupg xz-utils
 
 # import gpg public keys
 # [tar]  55D0C732 - Sergey Poznyakoff <gray@gnu.org>
